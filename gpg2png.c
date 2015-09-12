@@ -24,55 +24,55 @@
 #if defined(PNG_SIMPLIFIED_READ_SUPPORTED) && \
     defined(PNG_SIMPLIFIED_WRITE_SUPPORTED)
 
+#define BytesPerPixel 3 // sRGB
 void
 gethw(unsigned long pixels, unsigned *h, unsigned *w)
 {
-	unsigned long isqrt = (int)(sqrt(pixels));
-	if(isqrt*isqrt < pixels)
-		isqrt += 1;
-	*h = *w = isqrt;
-	return;
+    unsigned long isqrt = (int)(sqrt(pixels));
+    if(isqrt*isqrt < pixels)
+        isqrt += 1;
+    *h = *w = isqrt;
+    return;
 }
 
 /*
  * size = rows * columns
  *      = (BytesPerPixel * height) * width
  * here,
- * 		BytesPerPixel = 3 for sRGB
- *		size = given (in bytes)
+ *         BytesPerPixel = 3 for sRGB
+ *        size = given (in bytes)
  * might have to add padding, this function will return number of padding bytes
  *
  */
 unsigned
-make_box(unsigned *height, unsigned *width, size_t size) {
-	unsigned BytesPerPixel = 3; // sRGB
-	if (size < BytesPerPixel){
-		printf("Error: %s: invalid input\n", __func__);
-		exit(EINVAL);
-	}
-	size_t new_size = size;
-	*height = 0;
-	*width 	= 0;
+make_box(size_t *height, size_t *width, size_t size) {
+    if (size < BytesPerPixel){
+        printf("Error: %s: invalid input\n", __func__);
+        exit(EINVAL);
+    }
+    size_t new_size = size;
+    *height = 0;
+    *width     = 0;
 
-	// Make the size multiple of BytesPerPixel
-	switch(new_size%BytesPerPixel) {
-	case(0):
-		break;
-	case(2):
-		new_size += 1;
-		break;
-	case(1):
-		new_size += 2;
-		break;
-	}
-	unsigned pixels = new_size / BytesPerPixel;
-	gethw(pixels, height, width);
+    // Make the size multiple of BytesPerPixel
+    switch(new_size%BytesPerPixel) {
+    case(0):
+        break;
+    case(2):
+        new_size += 1;
+        break;
+    case(1):
+        new_size += 2;
+        break;
+    }
+    unsigned pixels = new_size / BytesPerPixel;
+    gethw(pixels, height, width);
 
-	/* Padding bytes =
-	 * Bytes added to make original size a multiple of BytesPerPixel +
-	 * New pixel added to make a square image
-	 */
-	return ((new_size - size) + (((*height * *width) - pixels) * BytesPerPixel));
+    /* Padding bytes =
+     * Bytes added to make original size a multiple of BytesPerPixel +
+     * New pixel added to make a square image
+     */
+    return ((new_size - size) + (((*height * *width) - pixels) * BytesPerPixel));
 }
 
 int main(int argc, const char **argv)
@@ -114,23 +114,21 @@ int main(int argc, const char **argv)
       /*
        * make a square image out of input data
        */
-	  unsigned height, width;
-	  unsigned padding_bytes = make_box(&height, &width, size);
+      size_t height, width;
+      unsigned padding_bytes = make_box(&height, &width, size);
 
-	  size = size + padding_bytes;
-	  if(!(inbuffer = realloc(inbuffer,size * sizeof(unsigned char))))
+      size = size + padding_bytes;
+      if(!(inbuffer = realloc(inbuffer,size * sizeof(unsigned char))))
             return ENOMEM;
-
-      png_bytepp png_inbuffer = (png_bytepp) inbuffer;
 
       if (fp != NULL)
             fclose(fp);
 
-      png_structp png_ptr = png_create_read_struct
+      png_structp png_ptr = png_create_write_struct
           (PNG_LIBPNG_VER_STRING, (png_voidp)NULL, NULL, NULL);
 
       if (!png_ptr)
-    		return -1;
+            return -1;
 
       png_infop info_ptr = png_create_info_struct(png_ptr);
 
@@ -139,8 +137,35 @@ int main(int argc, const char **argv)
          return -1;
       }
 
+      /* Set image attributes. */
+      int depth = 8;
+      int pixel_size = BytesPerPixel;
 
-	  png_set_rows(png_ptr, info_ptr, &);
+      png_set_IHDR (png_ptr,
+                  info_ptr,
+                  width,
+                  height,
+                  depth,
+                  PNG_COLOR_TYPE_RGB,
+                  PNG_INTERLACE_NONE,
+                  PNG_COMPRESSION_TYPE_DEFAULT,
+                  PNG_FILTER_TYPE_DEFAULT);
+ 
+      png_bytepp row_pointers = NULL;
+       
+      row_pointers = png_malloc (png_ptr, height * sizeof (png_bytep));
+      for (y = 0; y < height; ++y) {
+          png_bytep row = 
+              png_malloc (png_ptr, sizeof (uint8_t) * width * pixel_size);
+          row_pointers[y] = row;
+          for (x = 0; x < width; ++x) {
+              pixel_t * pixel = inbuffer + width *y + x;
+              *row++ = pixel;
+              *row++ = pixel+1;
+              *row++ = pixel+2;
+          }
+      }
+    
 
       printf("success\n");
 
