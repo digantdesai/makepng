@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Werror -O3
 LDFLAGS = -L /usr/lib
-LIBS = -lpng
+LIBS = -lpng -lm
 
 %.o: $.c
 	$(CC) $(CFLAGS) -c -o $@ $< 
