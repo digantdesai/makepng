@@ -4,12 +4,16 @@ LDFLAGS = -L /usr/lib
 LIBS = -lpng
 
 %.o: $.c
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) $(CFLAGS) -c -o $@ $< 
+
+all: gpg2png
 
 gpg2png: gpg2png.o
-	$(CC) -o $@ $^ $(CFLAGS) $(LIBS) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) -o $@ $^ 
 
 .PHONY: clean
 
 clean:
-	rm -f *.0 *~ gpg2png 
+	rm -f *.o *~ gpg2png 
+
+rebuild: clean all
