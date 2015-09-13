@@ -34,6 +34,12 @@
 #endif
 
 
+/*
+ * TODO
+ * 	clean the code
+ * 	add cmdline options for validation
+ * 	add decode routine and more cmdline options
+ */
 
 int total_text = 2;
 
