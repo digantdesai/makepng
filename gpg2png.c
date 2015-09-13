@@ -26,7 +26,7 @@
 
 #define BytesPerPixel 3 // sRGB
 void
-gethw(unsigned long pixels, unsigned *h, unsigned *w)
+gethw(unsigned long pixels, size_t *h, size_t *w)
 {
     unsigned long isqrt = (int)(sqrt(pixels));
     if(isqrt*isqrt < pixels)
@@ -106,16 +106,17 @@ int main(int argc, const char **argv)
             return ENOMEM;
 
       // printf("inbuffer: %p\n", inbuffer);
-     
-      unsigned n = size/sizeof(size_t);
-      if(!(fread(inbuffer, size, n, fp))==n)
-            return EIO;
+
+	  if(fread(inbuffer, sizeof(unsigned char), size, fp)!=size)
+        	return EIO;
 
       /*
        * make a square image out of input data
        */
       size_t height, width;
       unsigned padding_bytes = make_box(&height, &width, size);
+
+	  printf("Padding: %d\n", padding_bytes);
 
       size = size + padding_bytes;
       if(!(inbuffer = realloc(inbuffer,size * sizeof(unsigned char))))
@@ -152,75 +153,61 @@ int main(int argc, const char **argv)
                   PNG_FILTER_TYPE_DEFAULT);
  
       png_bytepp row_pointers = NULL;
-       
+
+      /* Set the rows */
+      size_t x, y;
+
       row_pointers = png_malloc (png_ptr, height * sizeof (png_bytep));
       for (y = 0; y < height; ++y) {
-          png_bytep row = 
-              png_malloc (png_ptr, sizeof (uint8_t) * width * pixel_size);
+          png_bytep row = png_malloc (png_ptr, sizeof (unsigned char) * width * pixel_size);
           row_pointers[y] = row;
           for (x = 0; x < width; ++x) {
-              pixel_t * pixel = inbuffer + width *y + x;
-              *row++ = pixel;
-              *row++ = pixel+1;
-              *row++ = pixel+2;
+              unsigned char *pixel = inbuffer + width * y + x;
+              *row++ = (png_bytep) pixel;
+              *row++ = (png_bytep) pixel++;
+              *row++ = (png_bytep) pixel++;
           }
       }
-    
 
-      printf("success\n");
+      /* text */
+	  int total_text = 2;
+	  int num_text = 0;
+      png_text text[total_text];
 
-      if (png_image_begin_read_from_file(&image, argv[1]))
-      {
-         png_bytep buffer;
+	  /* #1. signature */
+      text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
+      text[num_text].key = "Signature";
+      text[num_text].text = "Navsari";
+	  ++num_text;
 
-         /* Change this to try different formats!  If you set a colormap format
-          * then you must also supply a colormap below.
-          */
-         image.format = PNG_FORMAT_RGBA;
+	  /* #2. padding*/
+      text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
+      text[num_text].key = "Padding";
+	  char pad_str[20];
+	  snprintf(pad_str, 20, "%d", padding_bytes);
+      text[num_text].text = pad_str;
 
-         buffer = malloc(PNG_IMAGE_SIZE(image));
+	  png_set_text(png_ptr, info_ptr, text, total_text);
 
-         if (buffer != NULL)
-         {
-            if (png_image_finish_read(&image, NULL/*background*/, buffer,
-               0/*row_stride*/, NULL/*colormap for PNG_FORMAT_FLAG_COLORMAP */))
-            {
-               if (png_image_write_to_file(&image, argv[2],
-                  0/*convert_to_8bit*/, buffer, 0/*row_stride*/,
-                  NULL/*colormap*/))
-                  result = 0;
+      if (!(fp=fopen(argv[2],"w")))
+            return ENOENT;
+ 
+      /* Write the image data to "fp". */
+      png_init_io (png_ptr, fp);
+      png_set_rows (png_ptr, info_ptr, row_pointers);
+      png_write_png (png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
+      png_write_end(png_ptr, NULL);
+      printf("Done.\n");
 
-               else
-                  fprintf(stderr, "pngtopng: write %s: %s\n", argv[2],
-                      image.message);
-
-               free(buffer);
-            }
-
-            else
-            {
-               fprintf(stderr, "pngtopng: read %s: %s\n", argv[1],
-                   image.message);
-
-               /* This is the only place where a 'free' is required; libpng does
-                * the cleanup on error and success, but in this case we couldn't
-                * complete the read because of running out of memory.
-                */
-               png_image_free(&image);
-            }
-         }
-
-         else
-            fprintf(stderr, "pngtopng: out of memory: %lu bytes\n",
-               (unsigned long)PNG_IMAGE_SIZE(image));
+      for (y = 0; y < height; y++) {
+          png_free (png_ptr, row_pointers[y]);
       }
-
-      else
-         /* Failed to read the first argument: */
-         fprintf(stderr, "pngtopng: %s: %s\n", argv[1], image.message);
-
-       free(inbuffer);
-       inbuffer = NULL;
+      png_free (png_ptr, row_pointers);
+    
+      fclose (fp);
+      free(inbuffer);
+      inbuffer = NULL;
+      return result;
    }
 
    else
