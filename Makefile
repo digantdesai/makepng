@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O2
+CFLAGS = -O2 -Werror
 LDFLAGS = -L /usr/lib
 LIBS = -lpng -lm
 
