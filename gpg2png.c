@@ -25,6 +25,143 @@
     defined(PNG_SIMPLIFIED_WRITE_SUPPORTED)
 
 #define BytesPerPixel 3 // sRGB
+int total_text = 2;
+
+int
+validate(const char *filein, const char *filepng, size_t padding)
+{
+     /*
+      * Read original file (bytes)
+      */
+      FILE *fp;
+
+      if (!(fp=fopen(filein,"r")))
+            return ENOENT;
+
+      fseek(fp, 0, SEEK_END);
+      size_t size = ftell(fp);
+      fseek(fp,0, SEEK_SET);
+
+      unsigned char *inbuffer = NULL;
+      if(!(inbuffer = malloc(size * sizeof(unsigned char))))
+            return ENOMEM;
+
+      if(fread(inbuffer, sizeof(unsigned char), size, fp)!=size)
+            return EIO;
+      fclose(fp);
+
+     /*
+      * Read PNG file we just generated
+      *     extract bytes
+      *     remove padding bytes
+      */
+      printf("****Validating****\n");
+
+      unsigned char sig[8];
+      if (!(fp=fopen(filepng,"r")))
+            return ENOENT;
+
+      printf("PNG signature...");
+      fread(sig, 1, 8, fp);
+      if (!png_check_sig(sig, 8)) {
+            printf("Failed\n");
+            return 1;   /* bad signature */
+      }
+      printf("valid.\n");
+
+      png_structp png_ptr = png_create_read_struct
+            (PNG_LIBPNG_VER_STRING, (png_voidp)NULL, NULL, NULL);
+      if (!png_ptr)
+            return -1;
+
+      png_infop info_ptr = png_create_info_struct(png_ptr);
+      if (!info_ptr) {
+            png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
+            return -1;
+      }
+
+      png_init_io(png_ptr, fp);
+      png_set_sig_bytes(png_ptr, 8);
+	  png_read_info(png_ptr, info_ptr);
+
+	  size_t height, width;
+	  width = png_get_image_width(png_ptr, info_ptr);
+      height = png_get_image_height(png_ptr, info_ptr);
+      printf("Image dimentions: %d x %d\n", height, width);     
+
+
+      printf("My signature...");
+      png_textp valid_text[total_text];
+
+	  int text_chunks = 0;
+      unsigned num = png_get_text(png_ptr, info_ptr, valid_text, &text_chunks);
+
+      if(!num || num!=total_text){
+            printf("Failed\n");
+            return -1;
+      }
+      printf("valid.\n");
+
+      size_t padding_bytes = 0;
+	  for(int i=0; i<text_chunks; i++) {
+      	if(!strcmp(valid_text[i]->key,"Padding")) {
+      		padding_bytes = atol(valid_text[i]->text);
+      	}
+      }
+      printf("Padding: %u(bytes)\n", padding_bytes);
+
+ 	        png_byte color_type = png_get_color_type(png_ptr, info_ptr);
+      if (color_type != PNG_COLOR_TYPE_RGB)
+      	  printf("ColorType is not PNG_COLOR_TYPE_RGB\n");
+
+      png_byte bit_depth = png_get_bit_depth(png_ptr, info_ptr);
+
+      int number_of_passes = png_set_interlace_handling(png_ptr);
+      png_read_update_info(png_ptr, info_ptr);
+
+      size_t total_bytes = height * width * BytesPerPixel * (bit_depth/8);
+      if(total_bytes != size + padding_bytes) {
+      	  printf("Total payload bytes do not match. PNG: %u, Input: %u\n", total_bytes, size + padding_bytes);
+          return -1;
+      }
+	
+	  png_bytep * row_pointers;
+	  row_pointers = (png_bytep*) malloc(sizeof(png_bytep) * height);
+	  for (int y=0; y<height; y++)
+      		row_pointers[y] = (png_byte*) malloc(png_get_rowbytes(png_ptr,info_ptr));
+
+      png_read_image(png_ptr, row_pointers);
+
+     /*
+      * Compare the buffers
+      */
+
+      for (int y=0; y<height; y++) {
+              png_byte* row = row_pointers[y];
+              for (int x=0; x<width; x++) {
+                      png_byte* ptr = &(row[x*BytesPerPixel]);
+					  if (ptr[0]!=inbuffer[y*width + x + 0] || ptr[1]!= inbuffer[y*width + x + 1] ||  ptr[2]!= inbuffer[y*width + x + 2]) {
+							printf("Fatal error: Payload mismatch\n");
+							return -1;
+					  }
+              }
+      }
+
+	  free(inbuffer); 
+	  inbuffer=NULL;
+      for (int y=0; y<height; y++)
+      		free(row_pointers[y]);
+      free(row_pointers);
+      row_pointers=NULL;
+	  printf("****Validation successful!****\n");
+
+	  /*
+	   * write to a new file (validation.data)
+       */
+	  
+      return 0;
+}
+
 void
 gethw(unsigned long pixels, size_t *h, size_t *w)
 {
@@ -87,18 +224,18 @@ int main(int argc, const char **argv)
       memset(&image, 0, sizeof image);
       image.version = PNG_IMAGE_VERSION;
 
-      /* 
+      /*
        * read the file into a buffer
        */
       FILE *fp;
 
       if (!(fp=fopen(argv[1],"r")))
             return ENOENT;
-            
+
       fseek(fp, 0, SEEK_END);
       size_t size = ftell(fp);
       fseek(fp,0, SEEK_SET);
-      
+
       // printf("size: %u\n", size);
 
       unsigned char *inbuffer = NULL;
@@ -107,16 +244,15 @@ int main(int argc, const char **argv)
 
       // printf("inbuffer: %p\n", inbuffer);
 
-	  if(fread(inbuffer, sizeof(unsigned char), size, fp)!=size)
-        	return EIO;
-
+      if(fread(inbuffer, sizeof(unsigned char), size, fp)!=size)
+            return EIO;
       /*
        * make a square image out of input data
        */
       size_t height, width;
       unsigned padding_bytes = make_box(&height, &width, size);
 
-	  printf("Padding: %d\n", padding_bytes);
+      printf("Image size: %d x %d pixels(sRGB), Padding: %d(bytes)\n", height, width, padding_bytes);
 
       size = size + padding_bytes;
       if(!(inbuffer = realloc(inbuffer,size * sizeof(unsigned char))))
@@ -151,7 +287,7 @@ int main(int argc, const char **argv)
                   PNG_INTERLACE_NONE,
                   PNG_COMPRESSION_TYPE_DEFAULT,
                   PNG_FILTER_TYPE_DEFAULT);
- 
+
       png_bytepp row_pointers = NULL;
 
       /* Set the rows */
@@ -162,51 +298,53 @@ int main(int argc, const char **argv)
           png_bytep row = png_malloc (png_ptr, sizeof (unsigned char) * width * pixel_size);
           row_pointers[y] = row;
           for (x = 0; x < width; ++x) {
-              unsigned char *pixel = inbuffer + width * y + x;
-              *row++ = (png_bytep) pixel;
-              *row++ = (png_bytep) pixel++;
-              *row++ = (png_bytep) pixel++;
+              *row++ = inbuffer[width * y + x + 0];
+              *row++ = inbuffer[width * y + x + 1];
+              *row++ = inbuffer[width * y + x + 2];
           }
       }
 
       /* text */
-	  int total_text = 2;
-	  int num_text = 0;
+      int num_text = 0;
       png_text text[total_text];
 
-	  /* #1. signature */
+      /* #0. padding*/
+      text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
+      text[num_text].key = "Padding";
+      char pad_str[20];
+      snprintf(pad_str, 20, "%d", padding_bytes);
+      text[num_text].text = pad_str;
+      ++num_text;
+
+      /* #1. signature */
       text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
       text[num_text].key = "Signature";
       text[num_text].text = "Navsari";
-	  ++num_text;
-
-	  /* #2. padding*/
-      text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
-      text[num_text].key = "Padding";
-	  char pad_str[20];
-	  snprintf(pad_str, 20, "%d", padding_bytes);
-      text[num_text].text = pad_str;
-
-	  png_set_text(png_ptr, info_ptr, text, total_text);
+ 
+      png_set_text(png_ptr, info_ptr, text, total_text);
 
       if (!(fp=fopen(argv[2],"w")))
             return ENOENT;
- 
+
       /* Write the image data to "fp". */
       png_init_io (png_ptr, fp);
       png_set_rows (png_ptr, info_ptr, row_pointers);
       png_write_png (png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
       png_write_end(png_ptr, NULL);
-      printf("Done.\n");
+      printf("Generating PNG...Done.\n");
 
       for (y = 0; y < height; y++) {
           png_free (png_ptr, row_pointers[y]);
       }
       png_free (png_ptr, row_pointers);
-    
+
       fclose (fp);
       free(inbuffer);
       inbuffer = NULL;
+
+      /* Optional Validate */
+      if(!validate(argv[1], argv[2], padding_bytes));
+
       return result;
    }
 
