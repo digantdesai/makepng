@@ -6,14 +6,14 @@ LIBS = -lpng -lm
 %.o: $.c
 	$(CC) $(CFLAGS) -c -o $@ $< 
 
-all: gpg2png
+all: makePng
 
-gpg2png: gpg2png.o
+makePng: makePng.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) -o $@ $^ 
 
 .PHONY: clean
 
 clean:
-	rm -f *.o *~ gpg2png 
+	rm -f *.o *~ makePng
 
 rebuild: clean all
