@@ -42,10 +42,18 @@
  */
 #define DEBUG
 
+/* Normal */
 #ifdef DEBUG
 #define Dprintf(fmt, ...) printf(fmt, ##__VA_ARGS__)
 #else
 #define Dprintf
+#endif
+
+/* Heavy */
+#ifdef DDEBUG
+#define DDprintf(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#else
+#define DDprintf
 #endif
 
 /*
@@ -210,8 +218,8 @@ validate(const char *filein, const char *filepng, size_t padding)
               for (int x=0; x<width; x++) {
                       png_byte* ptr = &(row[x*BytesPerPixel]);
 
-                      Dprintf("%c%c%c\n", ptr[0],ptr[1],ptr[2]);
-                      Dprintf("%c%c%c\n", inbuffer[width*BytesPerPixel*y + BytesPerPixel*x+ 0],
+                      DDprintf("%c%c%c\n", ptr[0],ptr[1],ptr[2]);
+                      DDprintf("%c%c%c\n", inbuffer[width*BytesPerPixel*y + BytesPerPixel*x+ 0],
                                          inbuffer[width*BytesPerPixel*y + BytesPerPixel*x+ 1],
                                          inbuffer[width*BytesPerPixel*y + BytesPerPixel*x+ 2]);
 
@@ -329,19 +337,18 @@ main(int argc, const char **argv)
       size_t size = ftell(fp);
       fseek(fp,0, SEEK_SET);
 
-      // Dprintf("size: %u\n", size);
+      Dprintf("Input size: %u(bytes)\n", size);
 
       unsigned char *inbuffer = NULL;
       if(!(inbuffer = malloc(size * sizeof(unsigned char))))
             return ENOMEM;
 
-      // Dprintf("inbuffer: %p\n", inbuffer);
-
       if(fread(inbuffer, sizeof(unsigned char), size, fp)!=size)
             return EIO;
 
       for(int i=0;i<size;i++)
-            Dprintf("%c", inbuffer[i]);
+            DDprintf("%c", inbuffer[i]);
+
       /*
        * make a square image out of input data
        */
@@ -350,37 +357,41 @@ main(int argc, const char **argv)
 
       Dprintf("Image size: %d x %d pixels(sRGB), TotalBytes= %d = Original: %d + Padding: %d.\nPadding: %3.1f%%\n", height, width, height*width*BytesPerPixel, size, padding_bytes, (1.0*size/padding_bytes)*100);
 
-      size = size + padding_bytes;
-      if(!(inbuffer = realloc(inbuffer,size * sizeof(unsigned char))))
+	  /*
+	   * Add Padding bytes
+	   */
+      size_t new_size = size + padding_bytes;
+      if(!(inbuffer = realloc(inbuffer,new_size)))
             return ENOMEM;
 
-      memset(inbuffer+size-padding_bytes, PAD, padding_bytes);
+	  /*
+	   * Reset Padding bytes
+	   */
+      memset(inbuffer+size, PAD, padding_bytes);
 
       if (fp != NULL)
             fclose(fp);
+      /* Done with input file */
 
+      /*
+       * Prepare to write input data to a PNG file
+       */
       png_structp png_ptr = png_create_write_struct
           (PNG_LIBPNG_VER_STRING, (png_voidp)NULL, NULL, NULL);
-
       if (!png_ptr)
             return -1;
 
       png_infop info_ptr = png_create_info_struct(png_ptr);
-
       if (!info_ptr) {
          png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
          return -1;
       }
 
-      /* Set image attributes. */
-      int depth = 8;
-      int pixel_size = BytesPerPixel;
-
-      png_set_IHDR (png_ptr,
-                  info_ptr,
-                  width,
-                  height,
-                  depth,
+      /* 
+       * Set image attributes.
+       */
+      png_set_IHDR (png_ptr, info_ptr,
+                  width, height, BitDepth,
                   PNG_COLOR_TYPE_RGB,
                   PNG_INTERLACE_NONE,
                   PNG_COMPRESSION_TYPE_DEFAULT,
@@ -393,7 +404,7 @@ main(int argc, const char **argv)
 
       row_pointers = png_malloc (png_ptr, height * sizeof (png_bytep));
       for (y = 0; y < height; ++y) {
-          png_bytep row = png_malloc (png_ptr, sizeof (unsigned char) * width * pixel_size);
+          png_bytep row = png_malloc (png_ptr, sizeof (unsigned char) * width * BytesPerPixel);
           row_pointers[y] = row;
           for (x = 0; x < width; ++x) {
               *row++ = inbuffer[width * BytesPerPixel * y + BytesPerPixel * x + 0];
