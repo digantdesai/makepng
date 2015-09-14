@@ -278,23 +278,13 @@ make_box(size_t *height, size_t *width, size_t size) {
         Dprintf("Error: %s: invalid input\n", __func__);
         exit(EINVAL);
     }
-    size_t new_size = size;
     *height = 0;
     *width  = 0;
 
     // Make the size multiple of BytesPerPixel
-    // TODO: cleanup this logic new_size += 3 - (new_size%BytesPerPixel)
-    switch(new_size%BytesPerPixel) {
-    case(0):
-        break;
-    case(2):
-        new_size += 1;
-        break;
-    case(1):
-        new_size += 2;
-        break;
-    }
+    size_t new_size = size + (BytesPerPixel - (size%BytesPerPixel));
     unsigned pixels = new_size / BytesPerPixel;
+
     make_square_image(pixels, height, width);
 
     /*
@@ -305,7 +295,7 @@ make_box(size_t *height, size_t *width, size_t size) {
     Dprintf("New 3x Bytes   : %d\n", new_size);
     Dprintf("Original Pixels: %d, %d(bytes)\n",pixels, pixels*BytesPerPixel);
     Dprintf("New e2 Pixels  : %d, %d(bytes)\n",(*height * *width),((*height * *width) - pixels) * BytesPerPixel);
-    Dprintf("Dimensions        : %d x %d\n", *height, *width);
+    Dprintf("Dimensions     : %d x %d\n", *height, *width);
     return ((new_size - size) + (((*height * *width) - pixels) * BytesPerPixel));
 }
 
