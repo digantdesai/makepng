@@ -253,10 +253,12 @@ validate(const char *filein, const char *filepng, size_t padding)
 }
 
 /*
- *
+ * Increase the dimension to make a closest larger or equal
+ * perfect square number.
+ * This could add a lot of padding but fix it in later version.
  */
 void
-make_square_image(unsigned long pixels, size_t *h, size_t *w)
+make_squared(unsigned long pixels, size_t *h, size_t *w)
 {
     unsigned long isqrt = (int)(sqrt(pixels));
     if(isqrt*isqrt < pixels)
@@ -274,18 +276,23 @@ make_square_image(unsigned long pixels, size_t *h, size_t *w)
  */
 unsigned
 make_box(size_t *height, size_t *width, size_t size) {
+    /*
+     * Cant work with <1 pixel, something is wrong
+     */
     if (size < BytesPerPixel){
         Dprintf("Error: %s: invalid input\n", __func__);
         exit(EINVAL);
     }
-    *height = 0;
-    *width  = 0;
 
-    // Make the size multiple of BytesPerPixel
+    *height = *width  = 0;
+
+    /*
+     * Make image size multiple of BytesPerPixel
+     */
     size_t new_size = size + (BytesPerPixel - (size%BytesPerPixel));
     unsigned pixels = new_size / BytesPerPixel;
 
-    make_square_image(pixels, height, width);
+    make_squared(pixels, height, width);
 
     /*
      * Padding bytes = Bytes added to make original size a multiple of
@@ -299,18 +306,17 @@ make_box(size_t *height, size_t *width, size_t size) {
     return ((new_size - size) + (((*height * *width) - pixels) * BytesPerPixel));
 }
 
-int main(int argc, const char **argv)
+int
+main(int argc, const char **argv)
 {
    int result = 0;
 
+   /*
+    * Arg handling
+    */
+
    if (argc == 3)
    {
-      png_image image;
-
-      /* Only the image structure version number needs to be set. */
-      memset(&image, 0, sizeof image);
-      image.version = PNG_IMAGE_VERSION;
-
       /*
        * read the file into a buffer
        */
