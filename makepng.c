@@ -17,6 +17,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include "makepng.h"
 
 #define PNG_DEBUG 3
 #include <png.h>
