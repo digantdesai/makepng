@@ -1,75 +1,4 @@
-/*- pngtopng
- *
- * COPYRIGHT: Written by John Cunningham Bowler, 2011.
- * To the extent possible under law, the author has waived all copyright and
- * related or neighboring rights to this work.  This work is published from:
- * United States.
- *
- * Read a PNG and write it out in a fixed format, using the 'simplified API'
- * that was introduced in libpng-1.6.0.
- *
- * This sample code is just the code from the top of 'example.c' with some error
- * handling added.  See example.c for more comments.
- */
-#include <stddef.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
 #include "makepng.h"
-
-#define PNG_DEBUG 3
-#include <png.h>
-
-#if defined(PNG_SIMPLIFIED_READ_SUPPORTED) && \
-    defined(PNG_SIMPLIFIED_WRITE_SUPPORTED)
-
-/*
- * File data will be stored as sRGB = RGB888
- * format. In png terms, colortype=2, bitdepth=8
- */
-#define BytesPerPixel 3
-#define BitDepth 8
-
-/*
- * Padding byte, this hard-coded value is not used
- * anywhere as a sentinal.
- */
-#define PAD 'X'
-
-/*
- * Debug printf
- */
-// #define DEBUG
-// #define DDEBUG
-
-/* Normal */
-#ifdef DEBUG
-#define Dprintf(fmt, ...) printf(fmt, ##__VA_ARGS__)
-#else
-#define Dprintf
-#endif
-
-/* Heavy */
-#ifdef DDEBUG
-#define DDprintf(fmt, ...) printf(fmt, ##__VA_ARGS__)
-#else
-#define DDprintf
-#endif
-
-/*
- * Number of text chunks
- *     1. Number of padding bytes
- *     3. Signature (optional)
- */
-#define TotalTextChunks 2
-/*
- * TODO
- *     1. clean the code
- *     2. add cmdline options for validation
- *     3. add decode routine and more cmdline options
- */
 
 /*
  * validate
@@ -86,7 +15,6 @@
  *     @padding: Padding bytes to compare aginst
  *     return value: 0 - validated successfully, else validation failed.
  */
-#define ValidatedDataFile "validated.data"
 int
 validate(const char *filein, const char *filepng, size_t padding)
 {
@@ -523,4 +451,3 @@ main(int argc, const char **argv)
 
    return result;
 }
-#endif /* READ && WRITE */
