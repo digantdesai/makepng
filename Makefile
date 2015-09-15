@@ -6,12 +6,12 @@ LIBS = -lpng -lm
 PROG = makepng
 
 %.o: $.c $(PROG).h
-	$(CC) $(CFLAGS) -c -o $@ $< 
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 all: $(PROG)
 
-$(PROG): $(PROG).o
-	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) -o $@ $^ 
+$(PROG): $(PROG).o validate.o encode-decode.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) -o $@ $^
 
 .PHONY: clean
 

@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
 #include <png.h>
 
 #define PNG_DEBUG 3
@@ -48,6 +49,7 @@
 /*
  * Number of text chunks
  *     1. Number of padding bytes
+ *     2. fix debug and stderr, return and exit codes
  *     3. Signature (optional)
  */
 #define TotalTextChunks 2
@@ -55,6 +57,28 @@
 
 #define ValidatedDataFile "validated.data"
 
+/* APIs */
+
 /*
- * cmdline options
+ * decode
+ *
  */
+int decode(char *filepng, char *fileOutput);
+
+/*
+ * validate
+ *  - this is an optional routine, mainly used for
+ *  debugging,
+ *     - Extract the bytes out of the PNG file and validate it byte by byte aginst
+ *     the original fle.
+ *     - this routine will write raw bytes in 'validation.data' file. This could be
+ *     used to compare agaist the original input file.
+ *
+ *    Args:
+ *     @filein: Original input file name
+ *     @filepng: Original outout file name, assumed a valid PNG file
+ *     @padding: Padding bytes to compare aginst
+ *     return value: 0 - validated successfully, else validation failed.
+ */
+
+int validate(const char *filein, const char *filepng, size_t padding);
