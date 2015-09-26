@@ -19,7 +19,7 @@ $(PROG): $(PROG).o validate.o encode-decode.o
 .PHONY: clean
 
 clean:
-	rm -f *.o *~ $(PROG)
+	rm -f *.o *~ $(PROG) *.log test/*.log
 
 rebuild: clean all
 rebuild_debug: clean debug
