@@ -58,6 +58,11 @@
 #define ValidatedDataFile "validated.data"
 
 /* APIs */
+/* 
+ * encode
+ *
+ */
+int encode(char *fileInput, char *filepng, int validate);
 
 /*
  * decode
@@ -68,7 +73,9 @@ int decode(char *filepng, char *fileOutput);
 /*
  * validate
  *  - this is an optional routine, mainly used for
- *  debugging,
+ *  debugging, and has a lot of code from decode.
+ *  TODO: Overload decode to do this and delete this routine.
+ *
  *     - Extract the bytes out of the PNG file and validate it byte by byte aginst
  *     the original fle.
  *     - this routine will write raw bytes in 'validation.data' file. This could be

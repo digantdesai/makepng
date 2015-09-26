@@ -27,7 +27,7 @@ validate(const char *filein, const char *filepng, size_t padding) {
       *     extract bytes
       *     remove padding bytes
       */
-      Dprintf("****Validating****\n");
+      Dprintf("**** Validating ****\n");
 
       unsigned char sig[8];
       if (!(fp=fopen(filepng,"r")))
@@ -199,7 +199,7 @@ validate(const char *filein, const char *filepng, size_t padding) {
       row_pointers=NULL;
 
 
-      Dprintf("Validation successful!\n");
+      Dprintf("**** Validation successful! ****\n");
       free(outbuffer);
       outbuffer=NULL;
 
