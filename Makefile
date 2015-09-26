@@ -10,6 +10,9 @@ PROG = makepng
 
 all: $(PROG)
 
+debug: CFLAGS +=-g -DDEBUG
+debug: $(PROG)
+
 $(PROG): $(PROG).o validate.o encode-decode.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) -o $@ $^
 
@@ -19,3 +22,4 @@ clean:
 	rm -f *.o *~ $(PROG)
 
 rebuild: clean all
+rebuild_debug: clean debug
