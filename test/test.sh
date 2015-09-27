@@ -6,11 +6,24 @@ log=${dir}/test.log
 rm -f $log
 
 cd ..
-make rebuild_debug &> $log
+make rebuild_debug &> $log && echo "Building application..done." | tee -a  $log
 
 cd $dir
 
 if [[ ! -e $bin ]]; then echo "Missing binary. Make sure \"$(readlink -f $bin)\" exists before running the tests"; exit 1; fi
+
+# Generate temp test files in $dir starting with testdata
+
+touch $dir/testdata_a
+for i in $(seq 1 10); do echo dmesg >> $dir/testdata_a; done
+
+touch $dir/testdata_b
+for i in $(seq 1 100); do cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1 >> $dir/testdata_b; done
+
+touch $dir/testdata_c
+cp /vmlinuz-linux $dir/testdata_c
+
+echo "Generating random test files: a, b, c..done." | tee -a  $log
 
 # Encode
 # 0 - original file
@@ -22,8 +35,12 @@ if [[ ! -e $bin ]]; then echo "Missing binary. Make sure \"$(readlink -f $bin)\"
 
 echo "" 2>&1 >> $log
 
+echo "Starting tests.." | tee -a  $log
 for f0 in $(ls $dir/testdata* );
 do
+	echo "New testfile: $fo" >> $log
+	echo "" 2>&1 >> $log
+
 	f1=${f0}_1
 	f2=${f0}_2
 	fv=${dir}/validated.data
@@ -34,14 +51,18 @@ do
 	# Encode and Validate
 	$bin -v -m encode -i $f0 -o $f1 2>&1 >> $log
 
+	echo "" 2>&1 >> $log
 	# Decode
 	$bin -m decode -i $f1 -o $f2 2>&1 >> $log
+
+	wait &&
 
 	# Get all the check sums
 	sum0=$(echo -n $(cat $f0) | shasum -a 256)
 	sumv=$(echo -n $(cat $fv) | shasum -a 256)
 	sum2=$(echo -n $(cat $f2) | shasum -a 256)
 
+	echo "" 2>&1 >> $log
 	# no sum1 since its the intermediate state
 	if [[ "$sum0" == "$sumv" && "$sum0" == "$sum2" ]]; then
 		echo $sum0 $f0 2>&1 >> $log
@@ -50,12 +71,16 @@ do
 		echo "Success: $f0" | tee -a  $log
 		echo "" 2>&1 >> $log
 	else
-		echo "Failure: $f0"
-		exit 1
+		echo "Failed: $f0" | tee -a  $log
 	fi
 
 	# Cleanup
 	rm -f $fv $f1 $f2
 done
 
+
+# remove newly created temp files
+rm -f $dir/testdata_a $dir/testdata_b $dir/testdata_c
+
+echo "Testing complete." | tee -a  $log
 exit 0;
