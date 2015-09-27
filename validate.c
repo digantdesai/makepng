@@ -63,10 +63,10 @@ validate(const char *filein, const char *filepng, size_t padding) {
 
 	  /* text chunks and padding bytes */
       int text_chunks = 0;
-      png_textp valid_text[TotalTextChunks];
+      png_textp valid_text[i_total];
       unsigned num = png_get_text(png_ptr, info_ptr, valid_text, &text_chunks);
 
-      if(!num || text_chunks!=TotalTextChunks){
+      if(!num || text_chunks!=i_total){
       	    Dprintf("Text chunk count does not match expect count..");
             Dprintf("validation failed\n");
             return -1;
@@ -74,11 +74,12 @@ validate(const char *filein, const char *filepng, size_t padding) {
 
       size_t padding_bytes = 0;
       for(int i=0; i<text_chunks; i++) {
-          if(!strcmp(valid_text[i]->key,"Padding")) {
+          if(!strcmp(valid_text[i]->key, PADDING_KEY)) {
               padding_bytes = atol(valid_text[i]->text);
               break;
           }
       }
+
       if(padding_bytes!= padding) {
       	  Dprintf("Padding byte count does not match expect count..");
           Dprintf("validation failed\n");
@@ -87,6 +88,8 @@ validate(const char *filein, const char *filepng, size_t padding) {
       }
 
       Dprintf("Padding: %u(bytes)\n", padding_bytes);
+
+      /* Not checking other text chunk fields */
 
       png_byte color_type = png_get_color_type(png_ptr, info_ptr);
       if (color_type != PNG_COLOR_TYPE_RGB) {

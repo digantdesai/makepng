@@ -52,13 +52,22 @@
  *     2. fix debug and stderr, return and exit codes
  *     3. Signature (optional)
  */
-#define TotalTextChunks 2
+#define PADDING_KEY     "Padding"
+#define SIGN_KEY        "Signature"
+#define FILENAME_KEY    "Filename"
+
+typedef enum {
+    i_padding=0,
+    i_signature,
+    i_filename,
+    i_total
+} Chunks;
 
 
 #define ValidatedDataFile "validated.data"
 
 /* APIs */
-/* 
+/*
  * encode
  *
  */

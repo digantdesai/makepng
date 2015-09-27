@@ -56,11 +56,11 @@ make_box(size_t *height, size_t *width, size_t size) {
 /*
  * encode
  */
-int 
+int
 encode(char *inputfile, char *outputfile, int flagval)
 {
    int result = 0;
-	/*
+    /*
     * read the file into a buffer
     */
    FILE *fp;
@@ -151,14 +151,14 @@ encode(char *inputfile, char *outputfile, int flagval)
 
        for (x = 0; x < width; ++x) {
 
-       	  r = BytesPerPixel * x;
+             r = BytesPerPixel * x;
 
            *row++ = inbuffer[c + r + 0];
            *row++ = inbuffer[c + r + 1];
            *row++ = inbuffer[c + r + 2];
 
            DDprintf("%c%c%c",
-           	  inbuffer[c + r + 0],
+                 inbuffer[c + r + 0],
                inbuffer[c + r + 1],
                inbuffer[c + r + 2]);
        }
@@ -168,29 +168,26 @@ encode(char *inputfile, char *outputfile, int flagval)
    /*
     * Text chunks
     */
-   int num_text = 0;
-   png_text text[TotalTextChunks];
+   png_text text[i_total];
 
-   /* #1. padding*/
-   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
-   text[num_text].key = "Padding";
+   /* #0. padding*/
    char pad_str[20];
    snprintf(pad_str, 20, "%d", padding_bytes);
-   text[num_text].text = pad_str;
-   ++num_text;
+   text[i_padding].compression    = PNG_TEXT_COMPRESSION_NONE;
+   text[i_padding].key            = PADDING_KEY;
+   text[i_padding].text           = pad_str;
+   /* #1. signature */
+   text[i_signature].compression  = PNG_TEXT_COMPRESSION_NONE;
+   text[i_signature].key          = SIGN_KEY;
+   text[i_signature].text         = "Navsari";
+   /* #2. input file name */
+   text[i_filename].compression   = PNG_TEXT_COMPRESSION_NONE;
+   text[i_filename].key           = FILENAME_KEY;
+   text[i_filename].text          = inputfile;
 
-   /* #2. signature */
-   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
-   text[num_text].key = "Signature";
-   text[num_text].text = "Navsari";
+   /* #3. data sha256 checksum  */
 
-   /* 
-   	* TODO
-   	* #3. original filename
-    * #4. data checksum
-    */
-
-   png_set_text(png_ptr, info_ptr, text, TotalTextChunks);
+   png_set_text(png_ptr, info_ptr, text, i_total);
 
    if (!(fp=fopen(outputfile,"w")))
          return ENOENT;
@@ -218,8 +215,8 @@ encode(char *inputfile, char *outputfile, int flagval)
     * Optional Validation
     */
    if (flagval)
-   	if(!validate(inputfile, outputfile, padding_bytes));
-   		return 1;
+       if(!validate(inputfile, outputfile, padding_bytes));
+           return 1;
 
    return result;
 }
@@ -227,14 +224,14 @@ encode(char *inputfile, char *outputfile, int flagval)
 int
 decode(char *fpng, char *fout)
 {
-	FILE *fp;
+    FILE *fp;
 
-	unsigned char sig[8];
-	if (!(fp=fopen(fpng,"r")))
-		  return ENOENT;
+    unsigned char sig[8];
+    if (!(fp=fopen(fpng,"r")))
+          return ENOENT;
 
     unsigned char sign[8];
-	fread(sign, 1, 8, fp);
+    fread(sign, 1, 8, fp);
 
     png_check_sig(sig, 8);
 
@@ -254,16 +251,47 @@ decode(char *fpng, char *fout)
     png_read_info(png_ptr, info_ptr);
 
     /* text chunks and padding bytes */
-    int text_chunks = 0;
-    png_textp valid_text[TotalTextChunks];
-    unsigned num = png_get_text(png_ptr, info_ptr, valid_text, &text_chunks);
+     size_t padding_bytes = 0;
+    char *signature = NULL;
+    char *filename = NULL;
 
-	size_t padding_bytes = 0;
-    for(int i=0; i<text_chunks; i++) {
-        if(!strcmp(valid_text[i]->key,"Padding")) {
-            padding_bytes = atol(valid_text[i]->text);
-            break;
+       int text_chunks = 0;
+    png_textp valid_text;
+
+    unsigned num = png_get_text(png_ptr, info_ptr, &valid_text, &text_chunks);
+
+    if(!num || text_chunks != i_total)
+        fprintf(stderr, "Text chunk count mismatch, old encoding format?\n");
+
+    if(!strcmp(valid_text[i_padding].key, PADDING_KEY)) {
+        padding_bytes = atol(valid_text[i_padding].text);
+        Dprintf("Padding#: %d\n", padding_bytes);
+    } else {
+        fprintf(stderr, "Padding is missing\n");
+    }
+
+    if(!strcmp(valid_text[i_signature].key, SIGN_KEY)) {
+        signature = malloc(valid_text[i_signature].text_length);
+        if(!signature) {
+            fprintf(stderr, "Signature allocation failed\n");
+            exit(EXIT_FAILURE);
         }
+        strcpy(signature, valid_text[i_signature].text);
+        Dprintf("Sign: %s\n", signature);
+    } else {
+        fprintf(stderr, "Signature is missing\n");
+    }
+
+    if(!strcmp(valid_text[i_filename].key, FILENAME_KEY)) {
+        filename = malloc(valid_text[i_filename].text_length);
+        if(!filename) {
+            fprintf(stderr, "Filename allocation failed\n");
+            exit(EXIT_FAILURE);
+        }
+        strcpy(filename, valid_text[i_filename].text);
+        Dprintf("Input Filename: %s\n", filename);
+    } else {
+        fprintf(stderr, "Filename is missing\n");
     }
 
     size_t height, width;
@@ -276,12 +304,12 @@ decode(char *fpng, char *fout)
     size_t total_bytes = height * width * BytesPerPixel * (bit_depth/BitDepth);
     size_t size = total_bytes - padding_bytes;
 
-	png_bytep *row_pointers;
+    png_bytep *row_pointers;
     row_pointers = (png_bytep*) malloc(sizeof(png_bytep) * height);
 
     for (int y=0; y<height; y++)
-    	row_pointers[y] = 
-    		(png_byte*) malloc(png_get_rowbytes(png_ptr,info_ptr));
+        row_pointers[y] =
+            (png_byte*) malloc(png_get_rowbytes(png_ptr,info_ptr));
 
     png_read_image(png_ptr, row_pointers);
 
@@ -295,7 +323,7 @@ decode(char *fpng, char *fout)
     unsigned char *outbuffer=NULL;
     if(!(outbuffer = malloc(total_bytes * sizeof(unsigned char))))
           return ENOMEM;
-	
+
     size_t x,y,c,r;
 
     for (y=0; y<height; y++) {
@@ -306,7 +334,7 @@ decode(char *fpng, char *fout)
 
           for (x=0; x<width; x++) {
 
-          	  r = BytesPerPixel * x;
+                r = BytesPerPixel * x;
 
                 png_byte* ptr = &(row[x*BytesPerPixel]);
 
