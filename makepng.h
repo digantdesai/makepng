@@ -79,6 +79,8 @@ char* sha1(char *buffer);
 
 
 /* APIs */
+/*  TODO: Fix early return and free */
+
 /*
  * encode
  *
