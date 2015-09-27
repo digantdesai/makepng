@@ -1,14 +1,13 @@
-* makepng
+# makepng
 
-To convert any file into png (encode mode) and get the original file back (decode mode)
+* This is a simple program to convert any file into a "square .PNG" image file and also to get the original file back.
+    * Non standard library dependency, libpng: expecting at /usr/lib.
+    * encode and decode modes supported, to generate .PNG and to get the original file back.
+    * release and debug targets.
 
-	* Non standard library dependency, libpng: expecting at /usr/lib
-
-* Version Log
-
-version 1.1  | Some testing added. 
-version 1.0  | First working version with encode, decode and validate features.
-
-
-
+| Version | Log |
+| ------------- | ------------- |
+| v1.1 | Simple testing/validation added. |
+| v1.0 | First working version with encode, decode and validate features. |
+| v0.1 | Encoding working and cmdline options added. |
 
