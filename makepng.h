@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <unistd.h>
+#include <gcrypt.h>
 #include <png.h>
 
 #define PNG_DEBUG 3
@@ -55,16 +56,27 @@
 #define PADDING_KEY     "Padding"
 #define SIGN_KEY        "Signature"
 #define FILENAME_KEY    "Filename"
+#define SHA1_KEY        "SHA1sum"
 
 typedef enum {
     i_padding=0,
     i_signature,
     i_filename,
+    i_sha1,
     i_total
 } Chunks;
 
 
 #define ValidatedDataFile "validated.data"
+
+
+/* Utilities */
+void make_squared(unsigned long pixels, size_t *height, size_t *width);
+
+unsigned make_box(size_t *height, size_t *width, size_t size);
+
+char* sha1(char *buffer);
+
 
 /* APIs */
 /*

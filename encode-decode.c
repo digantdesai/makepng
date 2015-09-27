@@ -1,59 +1,6 @@
 #include "makepng.h"
 
 /*
- * Increase the dimension to make a closest larger or equal
- * perfect square number.
- * This could add a lot of padding but fix it in later version.
- */
-void
-make_squared(unsigned long pixels, size_t *h, size_t *w) {
-    unsigned long isqrt = (int)(sqrt(pixels));
-    if(isqrt*isqrt < pixels)
-        isqrt += 1;
-    *h = *w = isqrt;
-    return;
-}
-
-/*
- * size = rows * columns
- *      = (BytesPerPixel * height) * width
- * might have to add padding, this function will return number of padding bytes
- * and set height and width assuming pixed format sRGB.
- *
- */
-unsigned
-make_box(size_t *height, size_t *width, size_t size) {
-    /*
-     * Cant work with <1 pixel, something is wrong
-     */
-    if (size < BytesPerPixel){
-        Dprintf("Error: %s: invalid input\n", __func__);
-        exit(EINVAL);
-    }
-
-    *height = *width  = 0;
-
-    /*
-     * Make image size multiple of BytesPerPixel
-     */
-    size_t new_size = size + (BytesPerPixel - (size%BytesPerPixel));
-    unsigned pixels = new_size / BytesPerPixel;
-
-    make_squared(pixels, height, width);
-
-    /*
-     * Padding bytes = Bytes added to make original size a multiple of
-     * BytesPerPixel + New pixel added to make a square image
-     */
-    Dprintf("Original Bytes : %d\n", size);
-    Dprintf("New 3x Bytes   : %d\n", new_size);
-    Dprintf("Original Pixels: %d, %d(bytes)\n",pixels, pixels*BytesPerPixel);
-    Dprintf("New e2 Pixels  : %d, %d(bytes)\n",(*height * *width),((*height * *width) - pixels) * BytesPerPixel);
-    Dprintf("Dimensions     : %d x %d\n", *height, *width);
-    return ((new_size - size) + (((*height * *width) - pixels) * BytesPerPixel));
-}
-
-/*
  * encode
  */
 int
@@ -83,6 +30,9 @@ encode(char *inputfile, char *outputfile, int flagval)
 
    for(int i=0;i<size;i++)
          DDprintf("%c", inbuffer[i]);
+
+   char *sha1sum = sha1(inbuffer);
+   Dprintf("Sha1sum of the input buffer: %s\n", sha1sum);
 
    /*
     * make a square image out of input data
@@ -184,10 +134,16 @@ encode(char *inputfile, char *outputfile, int flagval)
    text[i_filename].compression   = PNG_TEXT_COMPRESSION_NONE;
    text[i_filename].key           = FILENAME_KEY;
    text[i_filename].text          = inputfile;
-
    /* #3. data sha256 checksum  */
+   text[i_sha1].compression       = PNG_TEXT_COMPRESSION_NONE;
+   text[i_sha1].key               = SHA1_KEY;
+   text[i_sha1].text              = sha1sum;
 
    png_set_text(png_ptr, info_ptr, text, i_total);
+
+   /* free sha1 buffer */
+   free(sha1sum);
+
 
    if (!(fp=fopen(outputfile,"w")))
          return ENOENT;
@@ -253,7 +209,8 @@ decode(char *fpng, char *fout)
     /* text chunks and padding bytes */
      size_t padding_bytes = 0;
     char *signature = NULL;
-    char *filename = NULL;
+    char *filename  = NULL;
+    char *sha1sum   = NULL;
 
        int text_chunks = 0;
     png_textp valid_text;
@@ -292,6 +249,18 @@ decode(char *fpng, char *fout)
         Dprintf("Input Filename: %s\n", filename);
     } else {
         fprintf(stderr, "Filename is missing\n");
+    }
+
+    if(!strcmp(valid_text[i_sha1].key, SHA1_KEY)) {
+        sha1sum = malloc(valid_text[i_sha1].text_length);
+        if(!sha1sum) {
+            fprintf(stderr, "SHA1sum allocation failed\n");
+            exit(EXIT_FAILURE);
+        }
+        strcpy(sha1sum, valid_text[i_sha1].text);
+        Dprintf("Sha1sum of input: %s\n", sha1sum);
+    } else {
+        fprintf(stderr, "Sha1sum is missing\n");
     }
 
     size_t height, width;

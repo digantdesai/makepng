@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -O2 -Werror
 LDFLAGS = -L /usr/lib
-LIBS = -lpng -lm
+LIBS = -lpng -lm -lgcrypt
 
 PROG = makepng
 
@@ -13,7 +13,7 @@ all: $(PROG)
 debug: CFLAGS +=-g -DDEBUG
 debug: $(PROG)
 
-$(PROG): $(PROG).o validate.o encode-decode.o
+$(PROG): $(PROG).o validate.o encode-decode.o utils.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) -o $@ $^
 
 .PHONY: clean
