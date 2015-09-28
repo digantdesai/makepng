@@ -31,7 +31,7 @@ encode(char *inputfile, char *outputfile, int flagval)
    for(int i=0;i<size;i++)
          DDprintf("%c", inbuffer[i]);
 
-   char *sha1sum = sha1(inbuffer);
+   char *sha1sum = sha1(inbuffer, size);
    Dprintf("Sha1sum of the input buffer: %s\n", sha1sum);
 
    /*
@@ -133,7 +133,7 @@ encode(char *inputfile, char *outputfile, int flagval)
    /* #2. input file name */
    text[i_filename].compression   = PNG_TEXT_COMPRESSION_NONE;
    text[i_filename].key           = FILENAME_KEY;
-   text[i_filename].text          = inputfile;
+   text[i_filename].text          = "testfile";
    /* #3. data sha256 checksum  */
    text[i_sha1].compression       = PNG_TEXT_COMPRESSION_NONE;
    text[i_sha1].key               = SHA1_KEY;
@@ -239,6 +239,7 @@ decode(char *fpng, char *fout)
         fprintf(stderr, "Signature is missing\n");
     }
 
+	/*
     if(!strcmp(valid_text[i_filename].key, FILENAME_KEY)) {
         filename = malloc(valid_text[i_filename].text_length);
         if(!filename) {
@@ -250,6 +251,7 @@ decode(char *fpng, char *fout)
     } else {
         fprintf(stderr, "Filename is missing\n");
     }
+    */
 
     if(!strcmp(valid_text[i_sha1].key, SHA1_KEY)) {
         sha1sum = malloc(valid_text[i_sha1].text_length);

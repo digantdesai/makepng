@@ -57,9 +57,9 @@ make_box(size_t *height, size_t *width, size_t size) {
  * Called have to free the buffer
  */
 char*
-sha1(char *val){
+sha1(char *val, size_t size){
 
-   int msg_length = strlen(val);
+   int msg_length = (int) size;
 
    int hash_length = gcry_md_get_algo_dlen(GCRY_MD_SHA1);
 

@@ -75,7 +75,7 @@ void make_squared(unsigned long pixels, size_t *height, size_t *width);
 
 unsigned make_box(size_t *height, size_t *width, size_t size);
 
-char* sha1(char *buffer);
+char* sha1(char *buffer, size_t size);
 
 
 /* APIs */
