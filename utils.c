@@ -51,30 +51,3 @@ make_box(size_t *height, size_t *width, size_t size) {
     Dprintf("Dimensions     : %d x %d\n", *height, *width);
     return ((new_size - size) + (((*height * *width) - pixels) * BytesPerPixel));
 }
-
-/*
- * sha1
- * Called have to free the buffer
- */
-char*
-sha1(char *val, size_t size){
-
-   int msg_length = (int) size;
-
-   int hash_length = gcry_md_get_algo_dlen(GCRY_MD_SHA1);
-
-   unsigned char hash[hash_length];
-
-   char *out =
-        (char *) malloc( sizeof(char) * ((hash_length*2)+1) );
-
-   char *p = out;
-
-   gcry_md_hash_buffer( GCRY_MD_SHA1, hash, val, msg_length );
-
-   for ( int i = 0; i < hash_length; i++, p += 2 ) {
-      snprintf ( p, 3, "%02x", hash[i] );
-   }
-
-   return out;
-}

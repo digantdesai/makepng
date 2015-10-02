@@ -31,9 +31,6 @@ encode(char *inputfile, char *outputfile, int flagval)
    for(int i=0;i<size;i++)
          DDprintf("%c", inbuffer[i]);
 
-   char *sha1sum = sha1(inbuffer, size);
-   Dprintf("Sha1sum of the input buffer: %s\n", sha1sum);
-
    /*
     * make a square image out of input data
     */
@@ -130,20 +127,8 @@ encode(char *inputfile, char *outputfile, int flagval)
    text[i_signature].compression  = PNG_TEXT_COMPRESSION_NONE;
    text[i_signature].key          = SIGN_KEY;
    text[i_signature].text         = "Navsari";
-   /* #2. input file name */
-   text[i_filename].compression   = PNG_TEXT_COMPRESSION_NONE;
-   text[i_filename].key           = FILENAME_KEY;
-   text[i_filename].text          = "testfile";
-   /* #3. data sha256 checksum  */
-   text[i_sha1].compression       = PNG_TEXT_COMPRESSION_NONE;
-   text[i_sha1].key               = SHA1_KEY;
-   text[i_sha1].text              = sha1sum;
 
    png_set_text(png_ptr, info_ptr, text, i_total);
-
-   /* free sha1 buffer */
-   free(sha1sum);
-
 
    if (!(fp=fopen(outputfile,"w")))
          return ENOENT;
@@ -207,12 +192,10 @@ decode(char *fpng, char *fout)
     png_read_info(png_ptr, info_ptr);
 
     /* text chunks and padding bytes */
-     size_t padding_bytes = 0;
+    size_t padding_bytes = 0;
     char *signature = NULL;
-    char *filename  = NULL;
-    char *sha1sum   = NULL;
 
-       int text_chunks = 0;
+    int text_chunks = 0;
     png_textp valid_text;
 
     unsigned num = png_get_text(png_ptr, info_ptr, &valid_text, &text_chunks);
@@ -225,44 +208,6 @@ decode(char *fpng, char *fout)
         Dprintf("Padding#: %d\n", padding_bytes);
     } else {
         fprintf(stderr, "Padding is missing\n");
-    }
-
-    if(!strcmp(valid_text[i_signature].key, SIGN_KEY)) {
-        signature = malloc(valid_text[i_signature].text_length);
-        if(!signature) {
-            fprintf(stderr, "Signature allocation failed\n");
-            exit(EXIT_FAILURE);
-        }
-        strcpy(signature, valid_text[i_signature].text);
-        Dprintf("Sign: %s\n", signature);
-    } else {
-        fprintf(stderr, "Signature is missing\n");
-    }
-
-	/*
-    if(!strcmp(valid_text[i_filename].key, FILENAME_KEY)) {
-        filename = malloc(valid_text[i_filename].text_length);
-        if(!filename) {
-            fprintf(stderr, "Filename allocation failed\n");
-            exit(EXIT_FAILURE);
-        }
-        strcpy(filename, valid_text[i_filename].text);
-        Dprintf("Input Filename: %s\n", filename);
-    } else {
-        fprintf(stderr, "Filename is missing\n");
-    }
-    */
-
-    if(!strcmp(valid_text[i_sha1].key, SHA1_KEY)) {
-        sha1sum = malloc(valid_text[i_sha1].text_length);
-        if(!sha1sum) {
-            fprintf(stderr, "SHA1sum allocation failed\n");
-            exit(EXIT_FAILURE);
-        }
-        strcpy(sha1sum, valid_text[i_sha1].text);
-        Dprintf("Sha1sum of input: %s\n", sha1sum);
-    } else {
-        fprintf(stderr, "Sha1sum is missing\n");
     }
 
     size_t height, width;

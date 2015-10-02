@@ -12,7 +12,6 @@ echo "Testing begin." | tee $log
 echo -n "Building application.." | tee -a $log
 make rebuild_debug >> $log
 
-cd $dir
 if [[ $? -ne 0 ]]; then
     echo "failed, exiting." | tee -a  $log
     exit 1
@@ -20,6 +19,8 @@ else
     echo "succeeded." | tee -a  $log
 fi
 echo "" | tee -a $log
+
+cd $dir
 
 # Generate temp test files in $dir starting with testdata
 echo -n "Generating random test files..." | tee -a  $log
@@ -85,10 +86,11 @@ do
         echo $sum0 $f0 >> $log
         echo $sumv $fv >> $log
         echo $sum2 $f2 >> $log
-        echo "Success !!!" | tee -a  $log
+        tput setaf 34; echo "Success !!!" | tee -a  $log ; tput sgr0;
+
         echo "" | tee -a $log
     else
-        echo "Failure !!!" | tee -a  $log
+        tput setaf 1; echo "Failure !!!" | tee -a  $log; tput sgr0;
         echo "" | tee -a $log
     fi
 
