@@ -7,6 +7,7 @@
 
 | Version | Log |
 | ------------- | ------------- |
+| v1.3 | Removed SHA1 and filename support in text chunk. |
 | v1.2 | SHA1 and filename support in text chunk. |
 | v1.1 | Simple testing/validation added. |
 | v1.0 | First working version with encode, decode and validate features. |
