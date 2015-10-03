@@ -1,3 +1,5 @@
+#!/bin/bash
+
 dir=$(dirname "$(readlink -f "$0")")
 bin=$(readlink -f ${dir}/../makepng)
 if [[ ! -e ${bin} ]]; then tput setaf 1; echo "Error: program \"makepng\" does not exist."; tput sgr0; exit 1; fi

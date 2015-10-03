@@ -7,6 +7,7 @@
 
 | Version | Log |
 | ------------- | ------------- |
+| v1.4 | More generic meta data text chunk added instead of particular ones e.g. sha1, filename |
 | v1.3 | Removed SHA1 and filename support in text chunk. |
 | v1.2 | SHA1 and filename support in text chunk. |
 | v1.1 | Simple testing/validation added. |

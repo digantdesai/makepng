@@ -104,5 +104,5 @@ done
 # remove newly created temp files
 rm -f $dir/testdata_a $dir/testdata_b $dir/testdata_c $dir/testdata_d
 
-echo "Testing complete. Check log file: ${log} for more details." | tee -a  $log
+echo "Testing complete. Check the log file: ${log} for more details." | tee -a  $log
 exit 0;

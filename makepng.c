@@ -2,13 +2,14 @@
 
 void
 print_help() {
-	printf("Usage: makepng -e|d,i,o,[m,v]\n"
+	printf("Usage: makepng -e|d,i,o,[m,v,p]\n"
 "cmdline args\n"
 "   	-e encode (flag)\n"
 "   	-d decode (flag), -e and -d are mutually exclusive\n"
 "   	-m meta-data (string), optional\n"
 "   	-i input-file (string), mandatory\n"
 "   	-o output-file (string), mandatory \n"
+"   	-p print-metadata (flag), optional\n"
 "   	-v validation (flag), optional\n");
 	return;
 }
