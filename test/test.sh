@@ -64,13 +64,15 @@ do
 
     # Encode and Validate
     echo -n "Encoding test.." | tee -a  $log
-    $bin -v -e -i $f0 -o $f1 >> $log
+
+	meta=$(echo -n $(cat $f0) | sha1sum | sed -r 's/([a-zA-Z0-9]*).*/\1/g')
+    $bin -v -e -i $f0 -o $f1 -m "sha1sum:${meta}" >> $log
     echo "Done." | tee -a $log
 
     echo "" 2>&1 >> $log
     # Decode
     echo -n "Decoding test.." | tee -a  $log
-    $bin -d -i $f1 -o $f2 >> $log
+    $bin -d -i $f1 -o $f2 -p >> $log
     echo "Done." | tee -a $log
 
     wait &&
@@ -102,5 +104,5 @@ done
 # remove newly created temp files
 rm -f $dir/testdata_a $dir/testdata_b $dir/testdata_c $dir/testdata_d
 
-echo "Testing complete." | tee -a  $log
+echo "Testing complete. Check log file: ${log} for more details." | tee -a  $log
 exit 0;

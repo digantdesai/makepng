@@ -49,15 +49,14 @@
 /*
  * Number of text chunks
  *     1. Number of padding bytes
- *     2. fix debug and stderr, return and exit codes
- *     3. Signature (optional)
+ *     2. metadata (optional)
  */
 #define PADDING_KEY     "Padding"
-#define SIGN_KEY        "Signature"
+#define META_KEY        "Metadata"
 
 typedef enum {
     i_padding=0,
-    i_signature,
+    i_metadata,
     i_total
 } Chunks;
 
@@ -77,13 +76,13 @@ unsigned make_box(size_t *height, size_t *width, size_t size);
  * encode
  *
  */
-int encode(char *fileInput, char *filepng, int validate);
+int encode(char *fileInput, char *filepng, int validate, char* metadata);
 
 /*
  * decode
  *
  */
-int decode(char *filepng, char *fileOutput);
+int decode(char *filepng, char *fileOutput, int print_metadata);
 
 /*
  * validate

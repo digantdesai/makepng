@@ -29,8 +29,9 @@ main(int argc, char *argv[])
 	char *inputfile = NULL;
 	char *outputfile = NULL;
 	int flagValidation = 0;
+	int flagPrintMetadata = 0;
 
-	while ((_x_ = getopt (argc, argv, "edm:i:o:vh")) != -1)
+	while ((_x_ = getopt (argc, argv, "edpm:i:o:vh")) != -1)
 	switch (_x_)
 	{
 	case 'e':
@@ -50,6 +51,9 @@ main(int argc, char *argv[])
 	  break;
 	case 'v':
 	  flagValidation = 1;
+	  break;
+	case 'p':
+	  flagPrintMetadata = 1;
 	  break;
 	case 'h':
 		 print_help();
@@ -86,10 +90,10 @@ main(int argc, char *argv[])
 
 	if(!strcmp(mode, "encode")) {
 		Dprintf("**** Encoding data file into a PNG image ****\n");
-		encode(inputfile, outputfile, flagValidation);
+		encode(inputfile, outputfile, flagValidation, meta);
 	} else if(!strcmp(mode, "decode")) {
 		Dprintf("**** Decoding a PNG image into a data file ****\n");
-		decode(inputfile, outputfile);
+		decode(inputfile, outputfile, flagPrintMetadata);
 	} else {
 		printf("Invalid mode, mode should be either \"encode\" or \"decode\", exiting.\n");
 		return 1;

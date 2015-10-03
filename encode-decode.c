@@ -4,7 +4,7 @@
  * encode
  */
 int
-encode(char *inputfile, char *outputfile, int flagval)
+encode(char *inputfile, char *outputfile, int flagval, char* meta)
 {
    int result = 0;
     /*
@@ -123,10 +123,10 @@ encode(char *inputfile, char *outputfile, int flagval)
    text[i_padding].compression    = PNG_TEXT_COMPRESSION_NONE;
    text[i_padding].key            = PADDING_KEY;
    text[i_padding].text           = pad_str;
-   /* #1. signature */
-   text[i_signature].compression  = PNG_TEXT_COMPRESSION_NONE;
-   text[i_signature].key          = SIGN_KEY;
-   text[i_signature].text         = "Navsari";
+   /* #1. metadata */
+   text[i_metadata].compression  = PNG_TEXT_COMPRESSION_NONE;
+   text[i_metadata].key          = META_KEY;
+   text[i_metadata].text         = meta? meta : "No Metadata";
 
    png_set_text(png_ptr, info_ptr, text, i_total);
 
@@ -163,7 +163,7 @@ encode(char *inputfile, char *outputfile, int flagval)
 }
 
 int
-decode(char *fpng, char *fout)
+decode(char *fpng, char *fout, int print_metadata)
 {
     FILE *fp;
 
@@ -193,7 +193,7 @@ decode(char *fpng, char *fout)
 
     /* text chunks and padding bytes */
     size_t padding_bytes = 0;
-    char *signature = NULL;
+    char *metadata = NULL;
 
     int text_chunks = 0;
     png_textp valid_text;
@@ -208,7 +208,25 @@ decode(char *fpng, char *fout)
         Dprintf("Padding#: %d\n", padding_bytes);
     } else {
         fprintf(stderr, "Padding is missing\n");
+        return -1;
     }
+
+    if(!strcmp(valid_text[i_metadata].key, META_KEY)) {
+        metadata = (char *) malloc(valid_text[i_metadata].text_length);
+        if (!metadata){
+            fprintf(stderr, "metadata allocation failed\n");
+            return -1;
+        }
+        metadata = strncpy(metadata, valid_text[i_metadata].text, valid_text[i_metadata].text_length);
+        Dprintf("Metadata: \"%s\"\n", metadata);
+    } else {
+        fprintf(stderr, "Missing Metadeta\n");
+        return -1;
+    }
+
+    if(print_metadata)
+        printf("%s\n", metadata);
+    free(metadata);
 
     size_t height, width;
     width = png_get_image_width(png_ptr, info_ptr);
