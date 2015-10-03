@@ -3,8 +3,8 @@ bin=$(readlink -f ${dir}/../makepng)
 
 for i in $(ls /bin); do
 	echo $(ls -ahs /bin/$i)
-	\time -f "encode: %e sec" $bin -i /bin/$i -o /tmp/$i.png -m encode
-	\time -f "decode: %e sec" $bin -m decode -i /tmp/$i.png -o /tmp/$i.orig
+	\time -f "encode: %e sec" $bin -i /bin/$i -o /tmp/$i.png -e
+	\time -f "decode: %e sec" $bin -d -i /tmp/$i.png -o /tmp/$i.orig
 
     sum0=$(echo -n $(cat /tmp/$i.orig) | sha1sum)
     sum2=$(echo -n $(cat /bin/$i) | sha1sum)

@@ -64,13 +64,13 @@ do
 
     # Encode and Validate
     echo -n "Encoding test.." | tee -a  $log
-    $bin -v -m encode -i $f0 -o $f1 >> $log
+    $bin -v -e -i $f0 -o $f1 >> $log
     echo "Done." | tee -a $log
 
     echo "" 2>&1 >> $log
     # Decode
     echo -n "Decoding test.." | tee -a  $log
-    $bin -m decode -i $f1 -o $f2 >> $log
+    $bin -d -i $f1 -o $f2 >> $log
     echo "Done." | tee -a $log
 
     wait &&

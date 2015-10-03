@@ -2,12 +2,14 @@
 
 void
 print_help() {
-	printf("Usage: makepng -mio[vdx]\n"
+	printf("Usage: makepng -e|d,i,o,[m,v]\n"
 "cmdline args\n"
-"   	-m mode (string : encode, decode)\n"
-"   	-i input file (string)\n"
-"   	-o output file (string)\n"
-"   	-v validation (flag)\n");
+"   	-e encode (flag)\n"
+"   	-d decode (flag), -e and -d are mutually exclusive\n"
+"   	-m meta-data (string), optional\n"
+"   	-i input-file (string), mandatory\n"
+"   	-o output-file (string), mandatory \n"
+"   	-v validation (flag), optional\n");
 	return;
 }
 
@@ -23,15 +25,22 @@ main(int argc, char *argv[])
 	opterr = 0;
 	int _x_ = 0;
 	char *mode = NULL;
+	char *meta = NULL;
 	char *inputfile = NULL;
 	char *outputfile = NULL;
 	int flagValidation = 0;
 
-	while ((_x_ = getopt (argc, argv, "m:i:o:vh")) != -1)
+	while ((_x_ = getopt (argc, argv, "edm:i:o:vh")) != -1)
 	switch (_x_)
 	{
+	case 'e':
+	  mode = "encode";
+	  break;
+	case 'd':
+	  mode = "decode";
+	  break;
 	case 'm':
-	  mode = optarg;
+	  meta = optarg;
 	  break;
 	case 'i':
 	  inputfile = optarg;
@@ -61,14 +70,16 @@ main(int argc, char *argv[])
 	if ( mode == NULL || inputfile == NULL || outputfile == NULL) {
 		printf("Invalid arguments\n");
 		   exit(EXIT_FAILURE);
-		}
+	}
 
 	Dprintf("**** User args **** \n"
-			  "Mode (-m)       = %s\n"
+			  "Mode (-e or -d) = %s\n"
+			  "Metadata (-m)   = %s\n"
 			  "Inputfile (-i)  = %s\n"
 			  "Outputfile (-o) = %s\n"
 			  "Validation (-v) = %s\n",
 			   mode,
+			   meta? meta: "No metadata provided",
 			   inputfile,
 			   outputfile,
 			   flagValidation?"On":"Off");
