@@ -59,15 +59,14 @@ main(int argc, char *argv[])
 	case 'h':
 		 print_help();
 		 return 1;
-		 break;
 	case '?':
 	  if (optopt == 'm' || optopt == 'i' || optopt == 'o') {
 		printf("Option -%c requires an argument.\n", optopt);
 	  } else {
 		printf("Unknown option `-%c'.\n", optopt);
 	  }
-		 print_help();
-	  return 1;
+		print_help();
+		return 1;
 	default:
 	  abort ();
 	}

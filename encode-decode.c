@@ -105,7 +105,7 @@ encode(char *inputfile, char *outputfile, int flagval, char* meta)
            *row++ = inbuffer[c + r + 2];
 
            DDprintf("%c%c%c",
-                 inbuffer[c + r + 0],
+               inbuffer[c + r + 0],
                inbuffer[c + r + 1],
                inbuffer[c + r + 2]);
        }
